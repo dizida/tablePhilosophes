@@ -1,31 +1,43 @@
 package diningphilosophers;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class ChopStick {
 
-    private static int stickCount = 10;
+    private static int stickCount = 0;
     private boolean iAmFree = true;
     private final int myNumber;
+    private final Lock lock = new ReentrantLock();
+
 
     public ChopStick() {
         myNumber = ++stickCount;
     }
 
-    synchronized public boolean tryTake(int delay) throws InterruptedException {
-        if (!iAmFree) {
-            wait(delay);
-            if (!iAmFree) // Toujours pas libre, on abandonne
-            {
-                return false; // Echec
+    public boolean tryTake(int delay) throws InterruptedException {
+        if (lock.tryLock()) {
+            try {
+                return true; // Succès
+            } finally {
+                // Pas de libération ici, car le verrou doit rester pris jusqu'à `release`
             }
         }
-        iAmFree = false;
-        // Pas utile de faire notifyAll ici, personne n'attend qu'elle soit occupée
-        return true; // Succès
+
+        // Si le verrou n'est pas disponible, on attend pendant le délai spécifié
+        if (lock.tryLock(delay, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            try {
+                return true; // Succès
+            } finally {
+                // Pas de libération ici non plus
+            }
+        }
+
+        return false; // Échec
     }
 
-    synchronized public void release() {
-        iAmFree = true;
-        notifyAll();
+    public void release() {
+        lock.unlock(); // Libération du verrou
         System.out.println("Stick " + myNumber + " Released");
     }
 
