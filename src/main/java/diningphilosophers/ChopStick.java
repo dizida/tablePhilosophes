@@ -2,7 +2,7 @@ package diningphilosophers;
 
 public class ChopStick {
 
-    private static int stickCount = 0;
+    private static int stickCount = 10;
     private boolean iAmFree = true;
     private final int myNumber;
 
